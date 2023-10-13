@@ -9,6 +9,7 @@
 
   let wallet;
   let address;
+  let balance;
 
   const connectWallet = async () => {
     const newWallet = new BeaconWallet({
@@ -19,6 +20,8 @@
       network: { type: network, rpcUrl },
     });
     address = await newWallet.getPKH();
+    const balanceMutez = await Tezos.tz.getBalance(address);
+    balance = balanceMutez.div(1000000).toFormat(2);
     wallet = newWallet;
   };
 
@@ -34,6 +37,7 @@
   <div class="card">
     {#if wallet}
       <p>The address of the connected wallet is {address}.</p>
+      <p>Its balance in tez is {balance}.</p>
       <button on:click={disconnectWallet}>
         Disconnect wallet
       </button>
