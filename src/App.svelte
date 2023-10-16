@@ -6,7 +6,7 @@
   const rpcUrl = "https://ghostnet.ecadinfra.com";
   const Tezos = new TezosToolkit(rpcUrl);
   const network = NetworkType.GHOSTNET;
-  const contractAddress = "KT1DiKfg5fLh575wsVW4gT9ETBdhmLpyp2Ev";
+  const contractAddress = "KT1Rm7iM4wBLcyYTS8Q1RmULw7fojQvPWi7g";
 
   let wallet;
   let address;
@@ -46,7 +46,7 @@
 
     await Tezos.wallet.at(contractAddress)
       .then((contract) =>
-        contract.methods.mint('').send({
+        contract.methods.mintNFT().send({
           gasLimit: 100000,
           fee: 100000,
           storageLimit: 1,
