@@ -2,11 +2,12 @@
   import { BeaconWallet } from "@taquito/beacon-wallet";
   import { NetworkType } from "@airgap/beacon-sdk";
   import { TezosToolkit } from "@taquito/taquito";
+  import { MichelsonMap } from "@taquito/michelson-encoder";
 
   const rpcUrl = "https://ghostnet.ecadinfra.com";
   const Tezos = new TezosToolkit(rpcUrl);
   const network = NetworkType.GHOSTNET;
-  const contractAddress = "KT1Rm7iM4wBLcyYTS8Q1RmULw7fojQvPWi7g";
+  const contractAddress = "KT1N1UUq55cav1nE97gyPnbB7kESVv2vPvBm";
 
   let wallet;
   let address;
@@ -15,18 +16,22 @@
   let buttonActive = false;
 
   const connectWallet = async () => {
-    const newWallet = new BeaconWallet({
-      name: "Simple NFT app tutorial",
-      preferredNetwork: network,
-    });
-    await newWallet.requestPermissions({
-      network: { type: network, rpcUrl },
-    });
-    address = await newWallet.getPKH();
-    const balanceMutez = await Tezos.tz.getBalance(address);
-    balance = balanceMutez.div(1000000).toFormat(2);
-    buttonActive = true;
-    wallet = newWallet;
+    try {
+      const newWallet = new BeaconWallet({
+        name: "Simple NFT app tutorial",
+        preferredNetwork: network,
+      });
+      await newWallet.requestPermissions({
+        network: { type: network, rpcUrl },
+      });
+      address = await newWallet.getPKH();
+      const balanceMutez = await Tezos.tz.getBalance(address);
+      balance = balanceMutez.div(1000000).toFormat(2);
+      buttonActive = true;
+      wallet = newWallet;
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+    }
   };
 
   const disconnectWallet = () => {
@@ -39,31 +44,36 @@
     if (!buttonActive) {
       return;
     }
-    Tezos.setWalletProvider(wallet);
-    console.log("minting");
     buttonActive = false;
     statusMessage = "Minting NFT...";
 
-    await Tezos.wallet.at(contractAddress)
-      .then((contract) =>
-        contract.methods.mintNFT().send({
-          gasLimit: 100000,
-          fee: 100000,
-          storageLimit: 1,
-          amount: 0,
-        })
-      )
-      .then((op) => {
-        console.log(`Waiting for ${op.opHash} to be confirmed...`);
-        return op.confirmation(3).then(() => op.opHash);
-      })
-      .then((hash) => console.log(`Operation injected: https://ghost.tzstats.com/${hash}`))
-      .catch((error) => console.log(`Error: ${JSON.stringify(error, null, 2)}`));
+    const currentDate = new Date().toISOString().split('T')[0]; 
+    const randomNumber = Math.floor(Math.random() * 10000);  
+    const metadata = new MichelsonMap();
+    metadata.set('serialNumber', `${currentDate}-${randomNumber}`);
 
-    statusMessage = "Mint an NFT";
-    console.log("done");
-    buttonActive = true;
+    try {
+      Tezos.setWalletProvider(wallet);
+
+      const contract = await Tezos.wallet.at(contractAddress);
+      const op = await contract.methods.mint(address, metadata).send({
+        gasLimit: 100000,
+        fee: 100000,
+        storageLimit: 1,
+        amount: 0,
+      });
+
+      console.log(`Waiting for ${op.opHash} to be confirmed...`);
+      const hash = await op.confirmation(3).then(() => op.opHash);
+      console.log(`Operation injected: https://ghost.tzstats.com/${hash}`);
+    } catch (error) {
+      console.error("Error minting NFT:", error);
+    } finally {
+      statusMessage = "Mint another NFT";
+      buttonActive = true;
+    }
   };
+
 </script>
 
 <main>
