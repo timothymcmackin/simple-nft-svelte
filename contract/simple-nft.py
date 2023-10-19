@@ -26,8 +26,7 @@ def main():
         applications please refer to FA2_lib."
         """
 
-        def __init__(self, administrator, metadata):
-            self.data.administrator = administrator
+        def __init__(self, metadata):
             self.data.ledger = sp.cast(sp.big_map(), sp.big_map[sp.nat, sp.address])
             self.data.metadata = metadata
             self.data.next_token_id = sp.nat(0)
@@ -148,7 +147,7 @@ def main():
 
         @sp.entrypoint
         def mint(self, to_, metadata):
-            """(Admin only) Create a new token with an incremented id and assign
+            """Create a new token with an incremented id and assign
             it. to `to_`.
 
             Args:
@@ -157,7 +156,6 @@ def main():
             Raises:
                 `FA2_NOT_ADMIN`
             """
-            assert sp.sender == self.data.administrator, "FA2_NOT_ADMIN"
             token_id = self.data.next_token_id
             self.data.token_metadata[token_id] = sp.record(
                 token_id=token_id, token_info=metadata
@@ -197,9 +195,9 @@ def main():
 
     class Fa2NftMinimalTest(Fa2NftMinimal):
         def __init__(
-            self, administrator, metadata, ledger, token_metadata, next_token_id
+            self, metadata, ledger, token_metadata, next_token_id
         ):
-            Fa2NftMinimal.__init__(self, administrator, metadata)
+            Fa2NftMinimal.__init__(self, metadata)
 
             self.data.next_token_id = next_token_id
             self.data.ledger = ledger
@@ -236,7 +234,7 @@ if "templates" not in __name__:
             }
         )
 
-    admin = sp.test_account("Administrator")
+
     alice = sp.test_account("Alice")
     tok0_md = make_metadata(name="Token Zero", decimals=1, symbol="Tok0")
     tok1_md = make_metadata(name="Token One", decimals=1, symbol="Tok1")
@@ -246,15 +244,14 @@ if "templates" not in __name__:
     def test():
         scenario = sp.test_scenario(main)
         c1 = main.Fa2NftMinimal(
-            admin.address, sp.utils.metadata_of_url("https://example.com")
+            sp.utils.metadata_of_url("https://cloudflare-ipfs.com/ipfs/QmW8jPMdBmFvsSEoLWPPhaozN6jGQFxxkwuMLtVFqEy6Fb")
         )
         scenario += c1
 
     from templates import fa2_lib_testing as testing
 
     c1 = main.Fa2NftMinimalTest(
-        administrator=admin.address,
-        metadata=sp.utils.metadata_of_url("https://example.com"),
+        metadata=sp.utils.metadata_of_url("https://cloudflare-ipfs.com/ipfs/QmW8jPMdBmFvsSEoLWPPhaozN6jGQFxxkwuMLtVFqEy6Fb"),
         ledger=sp.big_map({0: alice.address, 1: alice.address, 2: alice.address}),
         token_metadata=sp.big_map(
             {
